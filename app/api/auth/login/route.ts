@@ -1,68 +1,53 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Mock recruiter credentials for demo
-const MOCK_RECRUITERS = [
+// Mock user database
+const mockUsers = [
   {
-    id: "rec-001",
-    name: "Sarah Johnson",
-    email: "sarah@hirequotient.com",
-    password: "password123",
-    company: "HireQuotient",
-    role: "recruiter" as const,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+    id: "1",
+    name: "Demo Recruiter",
+    email: "demo@example.com",
+    password: "demo123",
+    companyName: "TechCorp",
   },
   {
-    id: "rec-002",
-    name: "Michael Chen",
-    email: "michael@hirequotient.com",
+    id: "2",
+    name: "John Doe",
+    email: "john@example.com",
     password: "password123",
-    company: "HireQuotient",
-    role: "recruiter" as const,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael",
-  },
-  {
-    id: "rec-003",
-    name: "Emma Wilson",
-    email: "emma@hirequotient.com",
-    password: "password123",
-    company: "HireQuotient",
-    role: "admin" as const,
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+    companyName: "Acme Inc",
   },
 ]
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
+    const { email, password } = await request.json()
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Find recruiter with matching credentials
-    const recruiter = MOCK_RECRUITERS.find((r) => r.email === email && r.password === password)
-
-    if (!recruiter) {
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    // Validate input
+    if (!email || !password) {
+      return NextResponse.json({ message: "Email and password are required" }, { status: 400 })
     }
 
-    // Generate mock JWT token
-    const token = Buffer.from(
-      JSON.stringify({
-        id: recruiter.id,
-        email: recruiter.email,
-        iat: Date.now(),
-      }),
-    ).toString("base64")
+    // Find user
+    const user = mockUsers.find((u) => u.email === email && u.password === password)
 
-    const { password: _, ...user } = recruiter
+    if (!user) {
+      return NextResponse.json({ message: "Invalid email or password" }, { status: 401 })
+    }
+
+    // Create mock token (in production, use JWT)
+    const token = Buffer.from(JSON.stringify({ userId: user.id, email: user.email })).toString("base64")
 
     return NextResponse.json({
-      user,
       token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        companyName: user.companyName,
+      },
     })
   } catch (error) {
-    console.error("Login error:", error)
-    return NextResponse.json({ error: "Login failed" }, { status: 500 })
+    console.error("[v0] Login error:", error)
+    return NextResponse.json({ message: "Internal server error" }, { status: 500 })
   }
 }
